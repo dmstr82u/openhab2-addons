@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * Copyright (c) 2014-2016 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -24,422 +24,410 @@ import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.rfxcom.RFXComBindingConstants;
 import org.openhab.binding.rfxcom.internal.DeviceMessageListener;
-import org.openhab.binding.rfxcom.internal.exceptions.RFXComException;
-import org.openhab.binding.rfxcom.internal.exceptions.RFXComNotImpException;
 import org.openhab.binding.rfxcom.internal.config.RFXComBridgeConfiguration;
 import org.openhab.binding.rfxcom.internal.connector.RFXComConnectorInterface;
 import org.openhab.binding.rfxcom.internal.connector.RFXComEventListener;
 import org.openhab.binding.rfxcom.internal.connector.RFXComJD2XXConnector;
 import org.openhab.binding.rfxcom.internal.connector.RFXComSerialConnector;
+import org.openhab.binding.rfxcom.internal.connector.RFXComTcpConnector;
+import org.openhab.binding.rfxcom.internal.exceptions.RFXComException;
+import org.openhab.binding.rfxcom.internal.exceptions.RFXComNotImpException;
+import org.openhab.binding.rfxcom.internal.messages.RFXComBaseMessage;
 import org.openhab.binding.rfxcom.internal.messages.RFXComInterfaceMessage;
 import org.openhab.binding.rfxcom.internal.messages.RFXComInterfaceMessage.Commands;
 import org.openhab.binding.rfxcom.internal.messages.RFXComInterfaceMessage.SubType;
 import org.openhab.binding.rfxcom.internal.messages.RFXComInterfaceMessage.TransceiverType;
-import org.openhab.binding.rfxcom.internal.messages.RFXComBaseMessage;
-import org.openhab.binding.rfxcom.internal.messages.RFXComMessageFactory;
 import org.openhab.binding.rfxcom.internal.messages.RFXComMessage;
+import org.openhab.binding.rfxcom.internal.messages.RFXComMessageFactory;
 import org.openhab.binding.rfxcom.internal.messages.RFXComTransmitterMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import gnu.io.NoSuchPortException;
 
 /**
  * {@link RFXComBridgeHandler} is the handler for a RFXCOM transceivers. All
  * {@link RFXComHandler}s use the {@link RFXComBridgeHandler} to execute the
  * actual commands.
- * 
+ *
  * @author Pauli Anttila - Initial contribution
  */
 public class RFXComBridgeHandler extends BaseBridgeHandler {
 
-	private Logger logger = LoggerFactory.getLogger(RFXComBridgeHandler.class);
+    private Logger logger = LoggerFactory.getLogger(RFXComBridgeHandler.class);
 
-	RFXComConnectorInterface connector = null;
-	private MessageListener eventListener = new MessageListener();
+    RFXComConnectorInterface connector = null;
+    private MessageListener eventListener = new MessageListener();
 
-	private List<DeviceMessageListener> deviceStatusListeners = new CopyOnWriteArrayList<>();
+    private List<DeviceMessageListener> deviceStatusListeners = new CopyOnWriteArrayList<>();
 
-	private static final int timeout = 5000;
-	private static byte seqNbr = 0;
-	private static RFXComTransmitterMessage responseMessage = null;
-	private Object notifierObject = new Object();
-	private RFXComBridgeConfiguration configuration = null;
-	private ScheduledFuture<?> connectorTask;
-	
-	public RFXComBridgeHandler(Bridge br) {
-		super(br);
-	}
+    private static final int timeout = 5000;
+    private static byte seqNbr = 0;
+    private static RFXComTransmitterMessage responseMessage = null;
+    private Object notifierObject = new Object();
+    private RFXComBridgeConfiguration configuration = null;
+    private ScheduledFuture<?> connectorTask;
 
-	@Override
-	public void handleCommand(ChannelUID channelUID, Command command) {
-		logger.debug("Bridge commands not supported.");
-	}
+    public RFXComBridgeHandler(Bridge br) {
+        super(br);
+    }
 
-	@Override
-	public void dispose() {
-		logger.debug("Handler disposed.");
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        logger.debug("Bridge commands not supported.");
+    }
 
-		if (connector != null) {
-			connector.removeEventListener(eventListener);
-			connector.disconnect();
-		}
+    @Override
+    public void dispose() {
+        logger.debug("Handler disposed.");
 
-		if (connectorTask != null && !connectorTask.isCancelled()) {
-			connectorTask.cancel(true);
-			connectorTask = null;
-		}
+        for (DeviceMessageListener deviceStatusListener : deviceStatusListeners) {
+            unregisterDeviceStatusListener(deviceStatusListener);
+        }
 
-		super.dispose();
-	}
+        if (connector != null) {
+            connector.removeEventListener(eventListener);
+            connector.disconnect();
+        }
 
-	@Override
-	public void initialize() {
-		logger.debug("Initializing RFXCOM bridge handler");
-		updateStatus(ThingStatus.OFFLINE);
-		
-		configuration = getConfigAs(RFXComBridgeConfiguration.class);
-		
-		if (connectorTask == null || connectorTask.isCancelled()) {
-			connectorTask = scheduler.scheduleAtFixedRate(new Runnable() {
-				
-				@Override
-				public void run() {
-					logger.debug("Checking RFXCOM transceiver connection, thing status = {}", thing.getStatus());
-					if (thing.getStatus() != ThingStatus.ONLINE) {
-						connect();	
-					}
-				}
-			}, 0, 60, TimeUnit.SECONDS);
-		}
-	}
+        if (connectorTask != null && !connectorTask.isCancelled()) {
+            connectorTask.cancel(true);
+            connectorTask = null;
+        }
 
-	private static synchronized byte getSeqNumber() {
-		return seqNbr;
-	}
+        super.dispose();
+    }
 
-	private static synchronized byte getNextSeqNumber() {
-		if (++seqNbr == 0)
-			seqNbr = 1;
+    @Override
+    public void initialize() {
+        logger.debug("Initializing RFXCOM bridge handler");
+        updateStatus(ThingStatus.OFFLINE);
 
-		return seqNbr;
-	}
+        configuration = getConfigAs(RFXComBridgeConfiguration.class);
 
-	private static synchronized RFXComTransmitterMessage getResponseMessage() {
-		return responseMessage;
-	}
+        if (connectorTask == null || connectorTask.isCancelled()) {
+            connectorTask = scheduler.scheduleAtFixedRate(new Runnable() {
 
-	private static synchronized void setResponseMessage(
-			RFXComTransmitterMessage respMessage) {
-		responseMessage = respMessage;
-	}
+                @Override
+                public void run() {
+                    logger.debug("Checking RFXCOM transceiver connection, thing status = {}", thing.getStatus());
+                    if (thing.getStatus() != ThingStatus.ONLINE) {
+                        connect();
+                    }
+                }
+            }, 0, 60, TimeUnit.SECONDS);
+        }
+    }
 
-	private void connect() {
-		logger.debug("Connecting to RFXCOM transceiver");
-		
-		try {
-			String deviceName = null;
-			
-			if (configuration.serialPort != null) {
-				deviceName = configuration.serialPort;
-				if (connector == null) {
-					connector = new RFXComSerialConnector();
-				}
-			} else if (configuration.bridgeId != null) {
-				deviceName = configuration.bridgeId;
-				if (connector == null) {
-					connector = new RFXComJD2XXConnector();
-				}
-			}
-			
-			if (connector != null) {
-				connector.disconnect();
-				connector.connect(deviceName);
+    private static synchronized byte getSeqNumber() {
+        return seqNbr;
+    }
 
-				logger.debug("Reset controller");
-				connector.sendMessage(RFXComMessageFactory.CMD_RESET);
+    private static synchronized byte getNextSeqNumber() {
+        if (++seqNbr == 0) {
+            seqNbr = 1;
+        }
 
-				// controller does not response immediately after reset,
-				// so wait a while
-				Thread.sleep(300);
-				connector.addEventListener(eventListener);
+        return seqNbr;
+    }
 
-				logger.debug("Get status of controller");
-				connector.sendMessage(RFXComMessageFactory.CMD_GET_STATUS);
-				// wait response
-				Thread.sleep(200);
-				
-				if (configuration.ignoreConfig) {
-					logger.debug("Ignoring tranceiver configuration");
-				} else {
+    private static synchronized RFXComTransmitterMessage getResponseMessage() {
+        return responseMessage;
+    }
 
-					byte[] setMode = new byte[0];
+    private static synchronized void setResponseMessage(RFXComTransmitterMessage respMessage) {
+        responseMessage = respMessage;
+    }
 
-					try {
-						setMode = createConfMessage(getThing().getUID()
-								.toString(), configuration);
+    private void connect() {
+        logger.debug("Connecting to RFXCOM transceiver");
 
-					} catch (IllegalArgumentException e) {
+        try {
+            String deviceName = null;
 
-						if (configuration.setMode != null
-								&& configuration.setMode.isEmpty() == false) {
-							try {
-								setMode = DatatypeConverter
-										.parseHexBinary(configuration.setMode);
+            if (configuration.serialPort != null) {
+                deviceName = configuration.serialPort;
+                if (connector == null) {
+                    connector = new RFXComSerialConnector();
+                }
+            } else if (configuration.bridgeId != null) {
+                deviceName = configuration.bridgeId;
+                if (connector == null) {
+                    connector = new RFXComJD2XXConnector();
+                }
+            } else if (configuration.host != null) {
+                deviceName = configuration.host;
+                if (connector == null) {
+                    connector = new RFXComTcpConnector();
+                }
+            }
 
-							} catch (IllegalArgumentException ee) {
-								logger.warn("setMode hexBinary value length should be 14 bytes (28 characters)");
-							}
-						}
-					} finally {
-						if (setMode.length == 14) {
-							logger.debug("Setting RFXCOM mode: {}",
-									DatatypeConverter.printHexBinary(setMode));
+            if (connector != null) {
+                connector.disconnect();
+                connector.connect(configuration);
 
-							connector.sendMessage(setMode);
-							// wait response
-							Thread.sleep(200);
-						} else if (setMode.length > 0) {
-							logger.warn("Illegal RFXCOM transceiver mode configuration");
-						}
-					}
+                logger.debug("Reset controller");
+                connector.sendMessage(RFXComMessageFactory.CMD_RESET);
 
-				}
-				
-				logger.debug("Start receiver");
-				connector.sendMessage(RFXComMessageFactory.CMD_START_RECEIVER);
-				updateStatus(ThingStatus.ONLINE);
-			}
-		} catch (Exception e) {
-			logger.error("Connection to RFXCOM transceiver failed: {}", e.getMessage());
-		} catch (UnsatisfiedLinkError e) {
-			logger.error(
-					"Error occured when trying to load native library for OS '{}' version '{}', processor '{}'",
-					System.getProperty("os.name"),
-					System.getProperty("os.version"),
-					System.getProperty("os.arch"), e);
-		}
-	}
+                // controller does not response immediately after reset,
+                // so wait a while
+                Thread.sleep(300);
+                connector.addEventListener(eventListener);
 
-	private byte[] createConfMessage(String bridgeType, RFXComBridgeConfiguration conf) {
-		if (conf != null && bridgeType != null) {
-			RFXComInterfaceMessage msg = new RFXComInterfaceMessage();
-			msg.command = Commands.SET_MODE;
+                logger.debug("Get status of controller");
+                connector.sendMessage(RFXComMessageFactory.CMD_GET_STATUS);
+                // wait response
+                Thread.sleep(200);
 
-			switch (bridgeType) {
-			case RFXComBindingConstants.BRIDGE_TYPE_RFXTRX315:
-				if (conf.transceiverType != null) {
-					switch (conf.transceiverType) {
-					case RFXComBindingConstants.TRANSCEIVER_310MHz:
-						msg.transceiverType = TransceiverType._310MHZ;
-						break;
-					case RFXComBindingConstants.TRANSCEIVER_315MHz:
-						msg.transceiverType = TransceiverType._315MHZ;
-						break;
-					default:
-						throw new IllegalArgumentException(
-								"Illegal tranceiver type");
-					}
-				}
-				break;
+                if (configuration.ignoreConfig) {
+                    logger.debug("Ignoring tranceiver configuration");
+                } else {
 
-			case RFXComBindingConstants.BRIDGE_TYPE_RFXREC433:
-				msg.transceiverType = TransceiverType._443_92MHZ_RECEIVER_ONLY;
-				break;
+                    byte[] setMode = new byte[0];
 
-			case RFXComBindingConstants.BRIDGE_TYPE_RFXTRX433:
-				msg.transceiverType = TransceiverType._443_92MHZ_TRANSCEIVER;
-				break;
+                    try {
+                        setMode = createConfMessage(getThing().getUID().toString(), configuration);
 
-			case RFXComBindingConstants.BRIDGE_TYPE_MANUAL_BRIDGE:
-				if (conf.transceiverType != null) {
-					switch (conf.transceiverType) {
-					case RFXComBindingConstants.TRANSCEIVER_433_92MHz:
-						msg.transceiverType = TransceiverType._443_92MHZ_TRANSCEIVER;
-						break;
-					case RFXComBindingConstants.TRANSCEIVER_433_92MHz_R:
-						msg.transceiverType = TransceiverType._443_92MHZ_RECEIVER_ONLY;
-						break;
-					case RFXComBindingConstants.TRANSCEIVER_310MHz:
-						msg.transceiverType = TransceiverType._310MHZ;
-						break;
-					case RFXComBindingConstants.TRANSCEIVER_315MHz:
-						msg.transceiverType = TransceiverType._315MHZ;
-						break;
-					default:
-						throw new IllegalArgumentException(
-								"Illegal tranceiver type");
-					}
-				}
-				break;
+                    } catch (IllegalArgumentException e) {
 
-			default:
-				throw new IllegalArgumentException("Illegal tranceiver type");
-			}
+                        if (configuration.setMode != null && configuration.setMode.isEmpty() == false) {
+                            try {
+                                setMode = DatatypeConverter.parseHexBinary(configuration.setMode);
 
-			msg.enableUndecodedPackets = configuration.enableUndecoded;
-			msg.enableImagintronixOpusPackets = configuration.enableImagintronixOpus;
-			msg.enableByronSXPackets = configuration.enableByronSX;
-			msg.enableRSLPackets = configuration.enableRSL;
-			msg.enableLighting4Packets = configuration.enableLighting4;
-			msg.enableFineOffsetPackets = configuration.enableFineOffsetViking;
-			msg.enableRubicsonPackets = configuration.enableRubicson;
-			msg.enableAEPackets = configuration.enableAEBlyss;
-			msg.enableBlindsT1T2T3T4Packets = configuration.enableBlindsT1T2T3T4;
-			msg.enableBlindsT0Packets = configuration.enableBlindsT0;
-			msg.enableProGuardPackets = configuration.enableProGuard;
-			msg.enableLaCrossePackets = configuration.enableLaCrosse;
-			msg.enableHidekiUPMPackets = configuration.enableHidekiUPM;
-			msg.enableADPackets = configuration.enableADLightwaveRF;
-			msg.enableMertikPackets = configuration.enableMertik;
-			msg.enableVisonicPackets = configuration.enableVisonic;
-			msg.enableATIPackets = configuration.enableATI;
-			msg.enableOregonPackets = configuration.enableOregonScientific;
-			msg.enableMeiantechPackets = configuration.enableMeiantech;
-			msg.enableHomeEasyPackets = configuration.enableHomeEasyEU;
-			msg.enableACPackets = configuration.enableAC;
-			msg.enableARCPackets = configuration.enableARC;
-			msg.enableX10Packets = configuration.enableX10;
+                            } catch (IllegalArgumentException ee) {
+                                logger.warn("setMode hexBinary value length should be 14 bytes (28 characters)");
+                            }
+                        }
+                    } finally {
+                        if (setMode.length == 14) {
+                            logger.debug("Setting RFXCOM mode: {}", DatatypeConverter.printHexBinary(setMode));
 
-			return msg.decodeMessage();
-		}
+                            connector.sendMessage(setMode);
+                            // wait response
+                            Thread.sleep(200);
+                        } else if (setMode.length > 0) {
+                            logger.warn("Illegal RFXCOM transceiver mode configuration");
+                        }
+                    }
 
-		throw new IllegalArgumentException("");
-	}
+                }
 
-	public synchronized void sendMessage(RFXComMessage msg) throws RFXComException {
+                logger.debug("Start receiver");
+                connector.sendMessage(RFXComMessageFactory.CMD_START_RECEIVER);
+                updateStatus(ThingStatus.ONLINE);
+            }
+        } catch (NoSuchPortException e) {
+            logger.error("Connection to RFXCOM transceiver failed: invalid port");
+        } catch (Exception e) {
+            logger.error("Connection to RFXCOM transceiver failed", e);
+        } catch (UnsatisfiedLinkError e) {
+            logger.error("Error occured when trying to load native library for OS '{}' version '{}', processor '{}'",
+                    System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"), e);
+        }
+    }
 
-		((RFXComBaseMessage) msg).seqNbr = getNextSeqNumber();
-		byte[] data = msg.decodeMessage();
+    private byte[] createConfMessage(String bridgeType, RFXComBridgeConfiguration conf) {
+        if (conf != null && bridgeType != null) {
+            RFXComInterfaceMessage msg = new RFXComInterfaceMessage();
+            msg.command = Commands.SET_MODE;
 
-		logger.debug("Transmitting message '{}'", msg);
-		logger.trace("Transmitting data: {}",
-				DatatypeConverter.printHexBinary(data));
+            switch (bridgeType) {
+                case RFXComBindingConstants.BRIDGE_TYPE_RFXTRX315:
+                    if (conf.transceiverType != null) {
+                        switch (conf.transceiverType) {
+                            case RFXComBindingConstants.TRANSCEIVER_310MHz:
+                                msg.transceiverType = TransceiverType._310MHZ;
+                                break;
+                            case RFXComBindingConstants.TRANSCEIVER_315MHz:
+                                msg.transceiverType = TransceiverType._315MHZ;
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Illegal tranceiver type");
+                        }
+                    }
+                    break;
 
-		setResponseMessage(null);
+                case RFXComBindingConstants.BRIDGE_TYPE_RFXREC433:
+                    msg.transceiverType = TransceiverType._443_92MHZ_RECEIVER_ONLY;
+                    break;
 
-		try {
-			connector.sendMessage(data);
-		} catch (IOException e) {
-			updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-			throw new RFXComException(e);
-		}
+                case RFXComBindingConstants.BRIDGE_TYPE_RFXTRX433:
+                    msg.transceiverType = TransceiverType._443_92MHZ_TRANSCEIVER;
+                    break;
 
-		try {
+                case RFXComBindingConstants.BRIDGE_TYPE_MANUAL_BRIDGE:
+                case RFXComBindingConstants.BRIDGE_TYPE_TCP_BRIDGE:
+                    if (conf.transceiverType != null) {
+                        switch (conf.transceiverType) {
+                            case RFXComBindingConstants.TRANSCEIVER_433_92MHz:
+                                msg.transceiverType = TransceiverType._443_92MHZ_TRANSCEIVER;
+                                break;
+                            case RFXComBindingConstants.TRANSCEIVER_433_92MHz_R:
+                                msg.transceiverType = TransceiverType._443_92MHZ_RECEIVER_ONLY;
+                                break;
+                            case RFXComBindingConstants.TRANSCEIVER_310MHz:
+                                msg.transceiverType = TransceiverType._310MHZ;
+                                break;
+                            case RFXComBindingConstants.TRANSCEIVER_315MHz:
+                                msg.transceiverType = TransceiverType._315MHZ;
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Illegal tranceiver type");
+                        }
+                    }
+                    break;
 
-			RFXComTransmitterMessage resp = null;
-			synchronized (notifierObject) {
-				notifierObject.wait(timeout);
-				resp = getResponseMessage();
-			}
+                default:
+                    throw new IllegalArgumentException("Illegal tranceiver type");
+            }
 
-			if (resp != null) {
-				switch (resp.response) {
-				case ACK:
-				case ACK_DELAYED:
-					logger.debug(
-							"Command successfully transmitted, '{}' received",
-							resp.response);
-					break;
+            msg.enableUndecodedPackets = configuration.enableUndecoded;
+            msg.enableImagintronixOpusPackets = configuration.enableImagintronixOpus;
+            msg.enableByronSXPackets = configuration.enableByronSX;
+            msg.enableRSLPackets = configuration.enableRSL;
+            msg.enableLighting4Packets = configuration.enableLighting4;
+            msg.enableFineOffsetPackets = configuration.enableFineOffsetViking;
+            msg.enableRubicsonPackets = configuration.enableRubicson;
+            msg.enableAEPackets = configuration.enableAEBlyss;
+            msg.enableBlindsT1T2T3T4Packets = configuration.enableBlindsT1T2T3T4;
+            msg.enableBlindsT0Packets = configuration.enableBlindsT0;
+            msg.enableProGuardPackets = configuration.enableProGuard;
+            msg.enableLaCrossePackets = configuration.enableLaCrosse;
+            msg.enableHidekiUPMPackets = configuration.enableHidekiUPM;
+            msg.enableADPackets = configuration.enableADLightwaveRF;
+            msg.enableMertikPackets = configuration.enableMertik;
+            msg.enableVisonicPackets = configuration.enableVisonic;
+            msg.enableATIPackets = configuration.enableATI;
+            msg.enableOregonPackets = configuration.enableOregonScientific;
+            msg.enableMeiantechPackets = configuration.enableMeiantech;
+            msg.enableHomeEasyPackets = configuration.enableHomeEasyEU;
+            msg.enableACPackets = configuration.enableAC;
+            msg.enableARCPackets = configuration.enableARC;
+            msg.enableX10Packets = configuration.enableX10;
 
-				case NAK:
-				case NAK_INVALID_AC_ADDRESS:
-				case UNKNOWN:
-					logger.error("Command transmit failed, '{}' received",
-							resp.response);
-					break;
-				}
-			} else {
-				logger.warn("No response received from transceiver");
-				updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-			}
+            return msg.decodeMessage();
+        }
 
-		} catch (InterruptedException ie) {
-			logger.error(
-					"No acknowledge received from RFXCOM controller, timeout {}ms ",
-					timeout);
-			updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-		}
-	}
+        throw new IllegalArgumentException("");
+    }
 
-	private class MessageListener implements RFXComEventListener {
+    public synchronized void sendMessage(RFXComMessage msg) throws RFXComException {
 
-		@Override
-		public void packetReceived(byte[] packet) {
-			try {
-				RFXComMessage message = RFXComMessageFactory.createMessage(packet);
-				logger.debug("Message received: {}", message);
+        ((RFXComBaseMessage) msg).seqNbr = getNextSeqNumber();
+        byte[] data = msg.decodeMessage();
 
-				if (message instanceof RFXComInterfaceMessage) {
-					RFXComInterfaceMessage msg = (RFXComInterfaceMessage) message;
-					if (msg.subType == SubType.RESPONSE) {
-						logger.debug(
-								"RFXCOM transceiver/receiver type: {}, hw version: {}.{}, fw version: {}",
-								msg.transceiverType, msg.hardwareVersion1,
-								msg.hardwareVersion2, msg.firmwareVersion);
-					}
-				} else if (message instanceof RFXComTransmitterMessage) {
-					RFXComTransmitterMessage resp = (RFXComTransmitterMessage) message;
+        logger.debug("Transmitting message '{}'", msg);
+        logger.trace("Transmitting data: {}", DatatypeConverter.printHexBinary(data));
 
-					byte seqNbr = getSeqNumber();
-					if (resp.seqNbr == seqNbr) {
-						logger.debug("Transmitter response received: {}",
-								message.toString());
-						setResponseMessage(resp);
-						synchronized (notifierObject) {
-							notifierObject.notify();
-						}
-					} else {
-						logger.warn(
-								"Sequence number '{}' does not match, expecting number '{}'",
-								resp.seqNbr, seqNbr);
-					}
+        setResponseMessage(null);
 
-				} else {
+        try {
+            connector.sendMessage(data);
+        } catch (IOException e) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+            throw new RFXComException(e);
+        }
 
-					for (DeviceMessageListener deviceStatusListener : deviceStatusListeners) {
-						try {
-							deviceStatusListener.onDeviceMessageReceived(
-									getThing().getUID(), message);
-						} catch (Exception e) {
-							logger.error(
-									"An exception occurred while calling the DeviceStatusListener",
-									e);
-						}
-					}
-				}
-			} catch (RFXComNotImpException e) {
-				logger.debug("Message not supported, data: {}",
-						DatatypeConverter.printHexBinary(packet));
-			} catch (RFXComException e) {
-				logger.error("Error occured during packet receiving, data: {}",
-						DatatypeConverter.printHexBinary(packet), e.getMessage());
-			}
-			
-			updateStatus(ThingStatus.ONLINE);
-		}
+        try {
 
-		@Override
-		public void errorOccured(String error) {
-			logger.error("Error occured: {}", error);
-			updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-		}
-	}
+            RFXComTransmitterMessage resp = null;
+            synchronized (notifierObject) {
+                notifierObject.wait(timeout);
+                resp = getResponseMessage();
+            }
 
-	public boolean registerDeviceStatusListener(
-			DeviceMessageListener deviceStatusListener) {
-		if (deviceStatusListener == null) {
-			throw new IllegalArgumentException(
-					"It's not allowed to pass a null deviceStatusListener.");
-		}
-		return deviceStatusListeners.add(deviceStatusListener);
-	}
+            if (resp != null) {
+                switch (resp.response) {
+                    case ACK:
+                    case ACK_DELAYED:
+                        logger.debug("Command successfully transmitted, '{}' received", resp.response);
+                        break;
 
-	public boolean unregisterDeviceStatusListener(
-			DeviceMessageListener deviceStatusListener) {
-		if (deviceStatusListener == null) {
-			throw new IllegalArgumentException(
-					"It's not allowed to pass a null deviceStatusListener.");
-		}
-		return deviceStatusListeners.remove(deviceStatusListener);
-	}
+                    case NAK:
+                    case NAK_INVALID_AC_ADDRESS:
+                    case UNKNOWN:
+                        logger.error("Command transmit failed, '{}' received", resp.response);
+                        break;
+                }
+            } else {
+                logger.warn("No response received from transceiver");
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+            }
+
+        } catch (InterruptedException ie) {
+            logger.error("No acknowledge received from RFXCOM controller, timeout {}ms ", timeout);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+        }
+    }
+
+    private class MessageListener implements RFXComEventListener {
+
+        @Override
+        public void packetReceived(byte[] packet) {
+            try {
+                RFXComMessage message = RFXComMessageFactory.createMessage(packet);
+                logger.debug("Message received: {}", message);
+
+                if (message instanceof RFXComInterfaceMessage) {
+                    RFXComInterfaceMessage msg = (RFXComInterfaceMessage) message;
+                    if (msg.subType == SubType.RESPONSE) {
+                        logger.debug("RFXCOM transceiver/receiver type: {}, hw version: {}.{}, fw version: {}",
+                                msg.transceiverType, msg.hardwareVersion1, msg.hardwareVersion2, msg.firmwareVersion);
+                    }
+                } else if (message instanceof RFXComTransmitterMessage) {
+                    RFXComTransmitterMessage resp = (RFXComTransmitterMessage) message;
+
+                    byte seqNbr = getSeqNumber();
+                    if (resp.seqNbr == seqNbr) {
+                        logger.debug("Transmitter response received: {}", message.toString());
+                        setResponseMessage(resp);
+                        synchronized (notifierObject) {
+                            notifierObject.notify();
+                        }
+                    } else {
+                        logger.warn("Sequence number '{}' does not match, expecting number '{}'", resp.seqNbr, seqNbr);
+                    }
+
+                } else {
+
+                    for (DeviceMessageListener deviceStatusListener : deviceStatusListeners) {
+                        try {
+                            deviceStatusListener.onDeviceMessageReceived(getThing().getUID(), message);
+                        } catch (Exception e) {
+                            logger.error("An exception occurred while calling the DeviceStatusListener", e);
+                        }
+                    }
+                }
+            } catch (RFXComNotImpException e) {
+                logger.debug("Message not supported, data: {}", DatatypeConverter.printHexBinary(packet));
+            } catch (RFXComException e) {
+                logger.error("Error occured during packet receiving, data: {}",
+                        DatatypeConverter.printHexBinary(packet), e.getMessage());
+            }
+
+            updateStatus(ThingStatus.ONLINE);
+        }
+
+        @Override
+        public void errorOccured(String error) {
+            logger.error("Error occured: {}", error);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+        }
+    }
+
+    public boolean registerDeviceStatusListener(DeviceMessageListener deviceStatusListener) {
+        if (deviceStatusListener == null) {
+            throw new IllegalArgumentException("It's not allowed to pass a null deviceStatusListener.");
+        }
+        return deviceStatusListeners.contains(deviceStatusListener) ? false
+                : deviceStatusListeners.add(deviceStatusListener);
+    }
+
+    public boolean unregisterDeviceStatusListener(DeviceMessageListener deviceStatusListener) {
+        if (deviceStatusListener == null) {
+            throw new IllegalArgumentException("It's not allowed to pass a null deviceStatusListener.");
+        }
+        return deviceStatusListeners.remove(deviceStatusListener);
+    }
 
 }

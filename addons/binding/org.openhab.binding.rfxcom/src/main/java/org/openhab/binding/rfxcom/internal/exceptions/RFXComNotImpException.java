@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2015, openHAB.org and others.
+ * Copyright (c) 2014-2016 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -10,27 +10,27 @@ package org.openhab.binding.rfxcom.internal.exceptions;
 
 /**
  * Exception for RFXCOM errors.
- * 
+ *
  * @author Pauli Anttila - Initial contribution
  */
 public class RFXComNotImpException extends Exception {
 
-	private static final long serialVersionUID = 5958462009164173495L;
+    private static final long serialVersionUID = 5958462009164173495L;
 
-	public RFXComNotImpException() {
-		super();
-	}
+    public RFXComNotImpException() {
+        super();
+    }
 
-	public RFXComNotImpException(String message) {
-		super(message);
-	}
+    public RFXComNotImpException(String message) {
+        super(message);
+    }
 
-	public RFXComNotImpException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public RFXComNotImpException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public RFXComNotImpException(Throwable cause) {
-		super(cause);
-	}
+    public RFXComNotImpException(Throwable cause) {
+        super(cause);
+    }
 
 }

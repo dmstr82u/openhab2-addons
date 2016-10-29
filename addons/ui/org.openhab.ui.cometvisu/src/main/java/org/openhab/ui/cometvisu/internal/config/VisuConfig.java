@@ -1,5 +1,6 @@
 /**
- * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -105,7 +106,6 @@ public class VisuConfig {
     public String getConfigXml(HttpServletRequest req) {
         SchemaPages pagesBean = new SchemaPages();
         pagesBean.setDesign("metal");
-        pagesBean.setEnableColumnAdjustment(true);
         pagesBean.setMaxMobileScreenWidth(new BigDecimal(480));
         pagesBean.setBindClickToWidget(true);
 
@@ -281,8 +281,9 @@ public class VisuConfig {
             Address address = configHelper.addAddress(info, item, transform);
             if (address != null) {
                 address.setMode("read");
-                if (item != null && !skipFormat)
+                if (item != null && !skipFormat) {
                     configHelper.addFormat(info, item.getLabel());
+                }
                 configHelper.addLabel(info, widget);
                 if (Transform.CONTACT.equals(transform)) {
                     info.setMapping("OpenClose");

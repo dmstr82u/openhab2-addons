@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<thing:thing-descriptions bindingId="rfxcom"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<thing:thing-descriptions bindingId="rfxcom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 
@@ -91,26 +90,28 @@
 		<item-type>Number</item-type>
 		<label>Instant Amp</label>
 		<description>Instant current in Amperes</description>
-		<state pattern="%d A" readOnly="true"></state>
+		<state pattern="%.2f A" readOnly="true"></state>
 	</channel-type>
 
-	<channel-type id="totalamphours" advanced="true">
+	<channel-type id="totalamphour" advanced="true">
 		<item-type>Number</item-type>
 		<label>Total Ampere-hours</label>
 		<description>Used "energy" in ampere-hours</description>
-		<state pattern="%d Ah" readOnly="true"></state>
+		<state pattern="%.2f Ah" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="temperature">
 		<item-type>Number</item-type>
 		<label>Temperature</label>
+		<category>Temperature</category>		
 		<description>Current temperature in degree Celsius</description>
-		<state pattern="%d °C" readOnly="true"></state>
+		<state pattern="%.1f °C" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="humidity">
 		<item-type>Number</item-type>
 		<label>Humidity</label>
+		<category>Humidity</category>
 		<description>Relative humidity level in percentages</description>
 		<state min="0" max="100" step="1" pattern="%d %%" readOnly="true"></state>
 	</channel-type>
