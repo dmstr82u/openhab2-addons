@@ -40,12 +40,6 @@
                 <description>The Poll Period after an event is triggered(sec).</description>
                 <default>2</default>
             </parameter>
-            <parameter name="quickPollPeriod" type="integer" required="false"
-                min="1" max="60">
-                <label>Quick Poll Period(sec)</label>
-                <description>The Poll Period after an event is triggered(sec).</description>
-                <default>2</default>
-            </parameter>
         </config-description>
     </bridge-type>
 </thing:thing-descriptions>
