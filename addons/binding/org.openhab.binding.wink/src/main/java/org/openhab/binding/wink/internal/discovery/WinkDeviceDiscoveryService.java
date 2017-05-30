@@ -115,7 +115,7 @@ public class WinkDeviceDiscoveryService extends AbstractDiscoveryService {
 
         @Override
         public void OnError(String error) {
-            discoveryService.logger.error("Error during the device discovery: " + error);
+            discoveryService.logger.error("Error during the device discovery: {}", error);
         }
     }
 

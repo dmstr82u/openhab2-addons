@@ -64,12 +64,12 @@ public abstract class WinkHandler extends BaseThingHandler {
     public WinkHandler(Thing thing) {
         super(thing);
         String config = (String) getThing().getConfiguration().get(WINK_DEVICE_CONFIG);
-        logger.trace("Initializing a thing with the following config: " + config);
+        logger.trace("Initializing a thing with the following config: {}", config);
         String id = (String) getThing().getConfiguration().get(WINK_DEVICE_ID);
-        logger.trace("Thing ID: " + id);
+        logger.trace("Thing ID: {}", id);
         this.deviceConfig = new WinkDeviceConfig(id);
         parseConfig(config);
-        logger.info("Initializing a Wink device: \n" + deviceConfig.asString());
+        logger.info("Initializing a Wink device: \n{}", deviceConfig.asString());
         registerToPubNub();
     }
 
@@ -86,7 +86,7 @@ public abstract class WinkHandler extends BaseThingHandler {
      * @param jsonConfigString the string containing the configuration of this thing as returned by the hub (in JSON).
      */
     protected void parseConfig(String jsonConfigString) {
-        logger.trace("Parsing a thing's config: " + jsonConfigString);
+        logger.trace("Parsing a thing's config: {}", jsonConfigString);
         JsonParser parser = new JsonParser();
         deviceConfig.readConfigFromJson(parser.parse(jsonConfigString).getAsJsonObject());
     }
@@ -159,7 +159,7 @@ public abstract class WinkHandler extends BaseThingHandler {
 
         @Override
         public void parseRequestResult(JsonObject jsonResult) {
-            logger.trace("Parsing a ReadDeviceState request result: " + jsonResult);
+            logger.trace("Parsing a ReadDeviceState request result: {}", jsonResult);
             // The response from the server is a JSON object containing the device information and state.
             handler.updateDeviceStateCallback(jsonResult.get("data").getAsJsonObject());
         }
@@ -169,11 +169,11 @@ public abstract class WinkHandler extends BaseThingHandler {
      * Query the {@link WinkHub2Handler} for this device's state.
      */
     protected void ReadDeviceState() {
-        logger.trace("Querying the device state for: \n" + deviceConfig.asString());
+        logger.trace("Querying the device state for: \n{}", deviceConfig.asString());
         try {
             getHubHandler().sendRequestToServer(getDeviceRequestPath(), new ReadDeviceStateCallback(this));
         } catch (IOException e) {
-            logger.error("Error while querying the hub for " + getDeviceRequestPath(), e);
+            logger.error("Error while querying the hub for {}", getDeviceRequestPath(), e);
         }
     }
 
@@ -195,19 +195,18 @@ public abstract class WinkHandler extends BaseThingHandler {
 
         @Override
         public void parseRequestResult(JsonObject jsonResult) {
-            logger.trace("Parsing a SendCommandCallback request result: " + jsonResult);
+            logger.trace("Parsing a SendCommandCallback request result: {}", jsonResult);
             handler.sendCommandCallback(jsonResult);
         }
     }
 
     public void sendCommand(String payLoad) {
-        logger.trace("Sending a command with the following payload: " + payLoad +
-                     "\nto device: \n" + deviceConfig.asString());
+        logger.trace("Sending a command with the following payload: {}\nto device: \n", payLoad, deviceConfig.asString());
         try {
             getHubHandler().sendRequestToServer(getDeviceRequestPath() + "/desired_state",
                     new SendCommandCallback(this), payLoad);
         } catch (IOException e) {
-            logger.error("Error while querying the hub for " + getDeviceRequestPath(), e);
+            logger.error("Error while querying the hub for {}", getDeviceRequestPath(), e);
         }
     }
 
@@ -216,7 +215,7 @@ public abstract class WinkHandler extends BaseThingHandler {
     /////////////////////////////////////////////////
 
     protected void registerToPubNub() {
-        logger.debug("Doing the PubNub registration for :\n" + deviceConfig.asString());
+        logger.debug("Doing the PubNub registration for :\n{}", deviceConfig.asString());
         PNConfiguration pnConfiguration = new PNConfiguration();
         pnConfiguration.setSubscribeKey(this.deviceConfig.getPubnubSubscribeKey());
 
@@ -224,7 +223,7 @@ public abstract class WinkHandler extends BaseThingHandler {
         this.pubnub.addListener(new SubscribeCallback() {
             @Override
             public void message(PubNub pubnub, PNMessageResult message) {
-                logger.trace("Received a reply from PubNub: " + message.getMessage().getAsString());
+                logger.trace("Received a reply from PubNub: {}", message.getMessage().getAsString());
                 JsonParser parser = new JsonParser();
                 JsonObject jsonMessage = parser.parse(message.getMessage().getAsString()).getAsJsonObject();
                 pubNubMessageCallback(jsonMessage);
@@ -237,7 +236,7 @@ public abstract class WinkHandler extends BaseThingHandler {
             @Override
             public void status(PubNub arg0, PNStatus status) {
               if (status.isError()) {
-                logger.error("PubNub communication error: " + status.getStatusCode());
+                logger.error("PubNub communication error: {}", status.getStatusCode());
               } else {
                 logger.trace("PubNub status: no error.");
               }
