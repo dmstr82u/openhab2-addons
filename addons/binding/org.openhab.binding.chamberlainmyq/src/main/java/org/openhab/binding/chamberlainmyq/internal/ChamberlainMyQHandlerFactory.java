@@ -21,6 +21,10 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
+import org.openhab.binding.chamberlainmyq.handler.LightBulbHandler;
+import org.openhab.binding.chamberlainmyq.handler.RemoteHandler;
+import org.openhab.binding.chamberlainmyq.handler.WinkHub2Handler;
+import org.openhab.binding.chamberlainmyq.handler.BinarySwitchHandler;
 
 /**
  * The {@link ChamberlainMyQHandlerFactory} is responsible for creating things and thing 
@@ -30,24 +34,23 @@ import org.eclipse.smarthome.core.thing.binding.ThingHandler;
  */
 public class ChamberlainMyQHandlerFactory extends BaseThingHandlerFactory {
     
+    private Logger logger = LoggerFactory.getLogger(ChamberlainMyQFactory.class);
+    
     private final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_SAMPLE);
     
     @Override
-    public Thing createThing(ThingTypeUID thingTypeUID, Configuration configuration, ThingUID thingUID,
-            ThingUID bridgeUID) {
-        if (ChamberlainMyQBridgeHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
-            ThingUID ChamberlainMyQBridgeUID = getBridgeThingUID(thingTypeUID, thingUID, configuration);
-            return super.createThing(thingTypeUID, configuration, ChamberlainMyQBridgeUID, null);
+    protected ThingHandler createHandler(Thing thing) {
+        ThingTypeUID thingTypeUID = thing.getThingTypeUID();
+
+        if (thingTypeUID.equals(THING_TYPE_MYQ_BRIDGE)) {
+            return new ChamberlainMyQGatewayHandler((Bridge) thing);
+        } else if (thingTypeUID.equals(THING_TYPE_DOOR_OPENER)) {
+            return new ChamberlainMyQDoorOpenerHandler(thing);
+        } else if (thingTypeUID.equals(THING_TYPE_LIGHT)) {
+            return new ChamberlainMyQLightHandler(thing);
         }
-        if (ChamberlainMyQDoorOpenerHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
-            ThingUID ChamberlainMyQDoorOpenerUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
-            return super.createThing(thingTypeUID, configuration, ChamberlainMyQDoorOpenerUID, bridgeUID);
-        }
-        if (ChamberlainMyQLightHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
-            ThingUID ChamberlainMyQLightUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
-            return super.createThing(thingTypeUID, configuration, ChamberlainMyQLightUID, bridgeUID);
-        }
-        throw new IllegalArgumentException("The thing type " + thingTypeUID + " is not supported by the ChamberlainMyQ binding.");
+
+        return null;
     }
 
     @Override

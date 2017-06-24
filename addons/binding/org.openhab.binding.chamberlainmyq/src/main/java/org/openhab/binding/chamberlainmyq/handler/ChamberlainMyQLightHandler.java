@@ -8,7 +8,7 @@
  */
 package org.openhab.binding.chamberlainmyq.handler;
 
-import static org.openhab.binding.chamberlainmyq.ChamberlainMyQConstants.CHANNEL_LIGHTLEVEL;
+import static org.openhab.binding.chamberlainmyq.ChamberlainMyQBindingConstants.CHANNEL_LIGHTLEVEL;
 
 import java.text.DecimalFormat;
 

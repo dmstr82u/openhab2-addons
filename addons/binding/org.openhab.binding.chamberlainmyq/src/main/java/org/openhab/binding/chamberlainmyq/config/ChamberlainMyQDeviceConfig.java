@@ -43,12 +43,13 @@ public class ChamberlainMyQDeviceConfig {
 
     public String asString() {
       // TODO: Add more data?
-      return ("Name:       " + name + "\n"+
-              "Model name: " + modelName);
+      return ("Name:        " + name + "\n"+
+              "Device Type: " + deviceType + "\n"+
+              "Model name:  " + modelName);
     }
 
     public boolean validateConfig() {
-        if (this.deviceId == null || this.name == null) {
+        if (this.deviceId == null || this.name == null || this.deviceType == null) {
             return false;
         }
         return true;
@@ -66,7 +67,7 @@ public class ChamberlainMyQDeviceConfig {
         return modelName;
     }
 
-    public String getDeviceManufacturer() {
-        return deviceManufacturer;
+    public String getDeviceType() {
+        return deviceType;
     }
 }

@@ -40,7 +40,7 @@ import com.google.gson.JsonParser;
  * TODO: The {@link ChamberlainMyQGatewayHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
- * @author Sebastien Marchand - Initial contribution
+ * @author Scott Hanson - Initial contribution
  */
 public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
 
@@ -52,16 +52,16 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        logger.error("The hub doesn't support any command!");
+        logger.error("The gateway doesn't support any command!");
     }
 
     @Override
     public void initialize() {
-        this.config = getThing().getConfiguration().as(WinkHub2Config.class);
+        this.config = getThing().getConfiguration().as(ChamberlainMyQGatewayConfig.class);
         if (validConfiguration()) {
-            WinkDeviceDiscoveryService discovery = new WinkDeviceDiscoveryService(this);
+            ChamberlainMyQDeviceDiscoveryService discovery = new ChamberlainMyQDeviceDiscoveryService(this);
 
-            this.bundleContext.registerService(DiscoveryService.class, discovery, null);
+           // this.bundleContext.registerService(DiscoveryService.class, discovery, null);
 
             this.scheduler.schedule(new Runnable() {
                 @Override
@@ -110,7 +110,7 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
         private String payLoad;
 
         public Request(String targetPath, RequestCallback callback, String payLoad) {
-            this.target = winkTarget.path(targetPath);
+            this.target = myqTarget.path(targetPath);
             this.callback = callback;
             this.payLoad = payLoad;
         }

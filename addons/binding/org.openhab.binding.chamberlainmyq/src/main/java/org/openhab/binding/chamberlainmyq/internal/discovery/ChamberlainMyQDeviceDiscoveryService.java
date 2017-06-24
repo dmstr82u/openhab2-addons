@@ -8,7 +8,7 @@
  */
 package org.openhab.binding.chamberlainmyq.internal.discovery;
 
-import static org.openhab.binding.chamberlainmyq.ChamberlainMyQConstants.*;
+import static org.openhab.binding.chamberlainmyq.ChamberlainMyQBindingConstants.*;
 
 import java.io.IOException;
 import java.util.HashMap;

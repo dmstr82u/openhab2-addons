@@ -7,11 +7,20 @@ Bundle-Version: 2.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: .
 Import-Package: com.google.common.collect,
+ com.google.gson,
+ org.apache.commons.lang,
+ javax.ws.rs.client;version="2.0.0",
+ javax.ws.rs.core;version="2.0.1",
  org.eclipse.smarthome.config.core,
+ org.eclipse.smarthome.config.discovery,
  org.eclipse.smarthome.core.library.types,
  org.eclipse.smarthome.core.thing,
  org.eclipse.smarthome.core.thing.binding,
+ org.eclipse.smarthome.core.thing.binding.builder,
+ org.eclipse.smarthome.core.thing.type,
  org.eclipse.smarthome.core.types,
+ org.openhab.binding.chamberlainmyq,
+ org.openhab.binding.chamberlainmyq.handler,
  org.slf4j
 Service-Component: OSGI-INF/*
 Export-Package: org.openhab.binding.chamberlainmyq,

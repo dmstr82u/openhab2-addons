@@ -20,11 +20,11 @@ public class ChamberlainMyQBindingConstants {
     public static final String BINDING_ID = "chamberlainmyq";
 
     // bridge
-    public final static ThingTypeUID THING_TYPE_MYQ_BRIDGE = new ThingTypeUID(BINDING_ID, "MyqGateway");
+    public final static ThingTypeUID THING_TYPE_MYQ_BRIDGE = new ThingTypeUID(BINDING_ID, "MyQGateway");
     
     // List of all Thing Type UIDs
-    public final static ThingTypeUID THING_TYPE_DOOR_OPENER = new ThingTypeUID(BINDING_ID, "DoorOpener");
-    public final static ThingTypeUID THING_TYPE_LIGHT = new ThingTypeUID(BINDING_ID, "Light");
+    public final static ThingTypeUID THING_TYPE_DOOR_OPENER = new ThingTypeUID(BINDING_ID, "MyQDoorOpener");
+    public final static ThingTypeUID THING_TYPE_LIGHT = new ThingTypeUID(BINDING_ID, "MyQLight");
 
     // List of all Channel ids
     public static final String CHANNEL_LIGHT_STATE = "lightstate";

@@ -8,7 +8,7 @@
  */
 package org.openhab.binding.chamberlainmyq.handler;
 
-import static org.openhab.binding.chamberlainmyq.ChamberlainMyQConstants.CHANNEL_SWITCHSTATE;
+import static org.openhab.binding.chamberlainmyq.ChamberlainMyQBindingConstants.*;
 
 import java.text.DecimalFormat;
 
