@@ -1,5 +1,6 @@
 /**
- * Copyright (c) 2014-2016 by the respective copyright holders.
+ * Copyright (c) 2010-2017 by the respective copyright holders.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +16,7 @@ import org.eclipse.smarthome.core.audio.AudioFormat;
 import org.eclipse.smarthome.core.audio.AudioHTTPServer;
 import org.eclipse.smarthome.core.audio.AudioSink;
 import org.eclipse.smarthome.core.audio.AudioStream;
+import org.eclipse.smarthome.core.audio.FixedLengthAudioStream;
 import org.eclipse.smarthome.core.audio.URLAudioStream;
 import org.eclipse.smarthome.core.audio.UnsupportedAudioFormatException;
 import org.eclipse.smarthome.core.library.types.PercentType;
@@ -68,15 +70,18 @@ public class KodiAudioSink implements AudioSink {
             // it is an external URL, the speaker can access it itself and play it.
             URLAudioStream urlAudioStream = (URLAudioStream) audioStream;
             url = urlAudioStream.getURL();
-        } else {
+        } else if (audioStream instanceof FixedLengthAudioStream) {
+            FixedLengthAudioStream fixedLengthAudioStream = (FixedLengthAudioStream) audioStream;
             if (callbackUrl != null) {
-                // we serve it on our own HTTP server
-                String relativeUrl = audioHTTPServer.serve(audioStream);
+                // we serve it on our own HTTP server for 30 seconds as Kodi requests the stream several times
+                String relativeUrl = audioHTTPServer.serve(fixedLengthAudioStream, 30);
                 url = callbackUrl + relativeUrl;
             } else {
                 logger.warn("We do not have any callback url, so kodi cannot play the audio stream!");
                 return;
             }
+        } else {
+            throw new UnsupportedAudioFormatException("Kodi can only handle FixedLengthAudioStreams.", null);
         }
         handler.playURI(new StringType(url));
 
