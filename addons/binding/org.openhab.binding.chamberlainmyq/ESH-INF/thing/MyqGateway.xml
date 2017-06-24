@@ -4,7 +4,7 @@
     xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
     xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 org.eclipse.smarthome.thing-description.xsd">
 
-    <bridge-type id="MyqGateway">
+    <bridge-type id="MyQGateway">
         <label>MyQ Gateway</label>
         <description>Web API for MyQ Devices</description>
 
@@ -33,6 +33,12 @@
                 <label>Poll Period(sec)</label>
                 <description>The Poll Period(sec).</description>
                 <default>60</default>
+            </parameter>
+            <parameter name="quickPollPeriod" type="integer" required="false"
+                min="1" max="60">
+                <label>Quick Poll Period(sec)</label>
+                <description>The Poll Period after an event is triggered(sec).</description>
+                <default>2</default>
             </parameter>
             <parameter name="quickPollPeriod" type="integer" required="false"
                 min="1" max="60">

@@ -4,9 +4,9 @@
 	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 org.eclipse.smarthome.thing-description.xsd">
 
-    <thing-type id="Light">
+    <thing-type id="MyQLight">
         <supported-bridge-type-refs>
-            <bridge-type-ref id="MyqGateway"/>
+            <bridge-type-ref id="MyQGateway"/>
         </supported-bridge-type-refs>
 
         <label>Lamp Module</label>

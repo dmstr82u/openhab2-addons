@@ -20,24 +20,31 @@ public class ChamberlainMyQBindingConstants {
     public static final String BINDING_ID = "chamberlainmyq";
 
     // bridge
-    public final static ThingTypeUID THING_TYPE_BRIDGE = new ThingTypeUID(BINDING_ID, "MyqGateway");
+    public final static ThingTypeUID THING_TYPE_MYQ_BRIDGE = new ThingTypeUID(BINDING_ID, "MyqGateway");
     
     // List of all Thing Type UIDs
     public final static ThingTypeUID THING_TYPE_DOOR_OPENER = new ThingTypeUID(BINDING_ID, "DoorOpener");
-	public final static ThingTypeUID THING_TYPE_LIGHT = new ThingTypeUID(BINDING_ID, "Light");
+    public final static ThingTypeUID THING_TYPE_LIGHT = new ThingTypeUID(BINDING_ID, "Light");
 
     // List of all Channel ids
     public static final String CHANNEL_LIGHT_STATE = "lightstate";
-	public static final String CHANNEL_DOOR_STATE = "doorstate";
+    public static final String CHANNEL_DOOR_STATE = "doorstate";
 
     // Bridge config properties
     public static final String USER_NAME = "username";
     public static final String PASSWORD = "password";
     public static final String POLL_PERIOD = "pollPeriod";
-	public static final String QUICK_POLL_PERIOD = "quickPollPeriod";
-	public static final String TIME_OUT = "timeout";
+    public static final String QUICK_POLL_PERIOD = "quickPollPeriod";
+    public static final String TIME_OUT = "timeout";
 
     // Door Opener/Light config properties
     public static final String MYQ_ID = "MyQDeviceId";
 
+    //API Information
+    public static final String WEBSITE = "https://myqexternal.myqdevice.com";
+    public static final String APP_ID = "NWknvuBd7LoFHfXmKNMBcgajXtZEgKUh4V7WNzMidrpUUluDpVYVZx+xT4PCM5Kx";
+    public static final String CULTURE = "en";
+    public static final String BRANDID = "2";
+    public static final String USERAGENT = "Chamberlain/3.73";
+    public static final String APIVERSION = "4.1";
 }
