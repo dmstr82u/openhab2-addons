@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2016 by the respective copyright holders.
+ * Copyright (c) 2010-2017 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -30,7 +30,7 @@ public class CommandSendserial extends AbstractCommand {
             String con, String code) {
         super(thing, queue, "sendserial", CommandType.SERIAL1);
         // Check to see if this is for the second serial port on a GC-100-12
-        if (isGC_100_12() && mod.equals("2")) {
+        if (isGC100Model12() && mod.equals("2")) {
             setCommandType(CommandType.SERIAL2);
         }
         this.command = command;

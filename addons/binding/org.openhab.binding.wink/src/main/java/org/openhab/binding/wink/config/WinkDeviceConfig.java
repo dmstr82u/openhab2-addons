@@ -43,6 +43,12 @@ public class WinkDeviceConfig {
         }
     }
 
+    public String asString() {
+      // TODO: Add more data?
+      return ("Name:       " + name + "\n"+
+              "Model name: " + modelName);
+    }
+
     public boolean validateConfig() {
         if (this.deviceId == null || this.name == null) {
             return false;
