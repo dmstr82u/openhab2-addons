@@ -105,4 +105,9 @@ public class ChamberlainMyQDoorOpenerHandler extends ChamberlainMyQHandler {
         // TODO: Is there something to do here? Maybe verify that the request succeed (e.g. that the device is online
         // etc...)
     }
+    
+    @Override
+    public void updateDeviceStateCallback(JsonObject jsonDataBlob) {
+        
+    }
 }

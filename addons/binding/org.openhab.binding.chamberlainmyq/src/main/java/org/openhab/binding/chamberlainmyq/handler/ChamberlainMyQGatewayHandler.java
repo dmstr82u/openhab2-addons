@@ -88,7 +88,7 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
         return true;
     }
 
-    public ChamberlainMyQGatewayHandler getGatewayConfig() {
+    public ChamberlainMyQGatewayConfig getGatewayConfig() {
         return this.config;
     }
 

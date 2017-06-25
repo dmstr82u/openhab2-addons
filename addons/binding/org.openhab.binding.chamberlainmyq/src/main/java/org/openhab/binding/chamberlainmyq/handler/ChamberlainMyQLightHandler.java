@@ -64,7 +64,7 @@ public class ChamberlainMyQLightHandler extends ChamberlainMyQHandler {
             } else if (command.equals(OnOffType.OFF)) {
                 setLightState(false);
             } else if (command instanceof RefreshType) {
-                logger.debug("Refreshing state");
+                //logger.debug("Refreshing state");
                 ReadDeviceState();
             }
         }
@@ -105,5 +105,9 @@ public class ChamberlainMyQLightHandler extends ChamberlainMyQHandler {
     public void sendCommandCallback(JsonObject jsonResult) {
         // TODO: Is there something to do here? Maybe verify that the request succeed (e.g. that the device is online
         // etc...)
+    }
+    @Override
+    public void updateDeviceStateCallback(JsonObject jsonDataBlob) {
+        
     }
 }
