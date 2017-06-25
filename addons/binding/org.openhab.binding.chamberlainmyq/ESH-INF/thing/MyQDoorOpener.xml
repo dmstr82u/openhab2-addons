@@ -14,8 +14,6 @@
 
         <channels>
             <channel id="doorstatusSW" typeId="doorstate"/>
-        </channels>
-        <channels>
             <channel id="doorstatusST" typeId="status"/>
         </channels>
 
