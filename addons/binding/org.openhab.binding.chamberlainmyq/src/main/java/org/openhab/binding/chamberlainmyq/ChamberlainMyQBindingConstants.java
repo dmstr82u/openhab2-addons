@@ -29,6 +29,7 @@ public class ChamberlainMyQBindingConstants {
     // List of all Channel ids
     public static final String CHANNEL_LIGHT_STATE = "lightstate";
     public static final String CHANNEL_DOOR_STATE = "doorstate";
+	public static final String CHANNEL_DOOR_STATUS = "status";
 
     // Bridge config properties
     public static final String USER_NAME = "username";

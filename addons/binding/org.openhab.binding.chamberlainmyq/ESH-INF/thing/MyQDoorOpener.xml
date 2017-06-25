@@ -19,12 +19,8 @@
             <channel id="doorstatusST" typeId="status"/>
         </channels>
 
-        <config-description>
-            <parameter name="MyQDeviceId" type="text">
-                <label>MyQDeviceId</label>
-                <description>ID of Door Opener in the API</description>
-                <required>true</required>
-            </parameter>
-        </config-description>
+         <properties>
+            <property name="MyQDeviceId"></property>
+        </properties>
     </thing-type>
 </thing:thing-descriptions>
