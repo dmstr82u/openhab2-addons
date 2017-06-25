@@ -50,20 +50,20 @@ public class ChamberlainMyQDoorOpenerHandler extends ChamberlainMyQHandler {
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
-        if (channelUID.getId().equals(CHANNEL_SWITCHSTATE)) {
+        if (channelUID.getId().equals(CHANNEL_DOOR_STATE)) {
             ReadDeviceState();
         }
     }
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        if (channelUID.getId().equals(CHANNEL_SWITCHSTATE)) {
+        if (channelUID.getId().equals(CHANNEL_DOOR_STATE)) {
             if (command.equals(OnOffType.ON)) {
                 setSwitchState(true);
             } else if (command.equals(OnOffType.OFF)) {
                 setSwitchState(false);
             } else if (command instanceof RefreshType) {
-                logger.debug("Refreshing state");
+                //logger.debug("Refreshing state");
                 ReadDeviceState();
             }
         }
@@ -96,7 +96,7 @@ public class ChamberlainMyQDoorOpenerHandler extends ChamberlainMyQHandler {
         }
         // Don't update the state during a transition.
         if (poweredDesiredState == poweredLastReading) {
-            updateState(CHANNEL_SWITCHSTATE, (poweredLastReading ? OnOffType.ON : OnOffType.OFF));
+            updateState(CHANNEL_DOOR_STATE, (poweredLastReading ? OnOffType.ON : OnOffType.OFF));
         }
     }
 

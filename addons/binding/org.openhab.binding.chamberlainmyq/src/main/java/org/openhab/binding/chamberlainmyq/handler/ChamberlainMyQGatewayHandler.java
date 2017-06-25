@@ -61,7 +61,7 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
         if (validConfiguration()) {
             ChamberlainMyQDeviceDiscoveryService discovery = new ChamberlainMyQDeviceDiscoveryService(this);
 
-           // this.bundleContext.registerService(DiscoveryService.class, discovery, null);
+            this.bundleContext.registerService(DiscoveryService.class, discovery, null);
 
             this.scheduler.schedule(new Runnable() {
                 @Override
@@ -76,13 +76,13 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
 
     private boolean validConfiguration() {
         if (this.config == null) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Hub configuration missing");
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Gateway configuration missing");
             return false;
-        } else if (StringUtils.isEmpty(this.config.access_token)) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "access_token not specified");
+        } else if (StringUtils.isEmpty(this.config.username)) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "username not specified");
             return false;
-        } else if (StringUtils.isEmpty(this.config.refresh_token)) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "refresh_token not specified");
+        } else if (StringUtils.isEmpty(this.config.password)) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "password not specified");
             return false;
         }
         return true;
@@ -149,10 +149,10 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
             if (payLoad != null) {
                 logger.trace("Request payload: {}", payLoad.toString());
                 response = target.request(MediaType.APPLICATION_JSON_TYPE)
-                        .header("Authorization", "Bearer " + this.config.access_token).put(Entity.json(payLoad));
+                        .header("Authorization", "Bearer " ).put(Entity.json(payLoad));
             } else {
                 response = target.request(MediaType.APPLICATION_JSON_TYPE)
-                        .header("Authorization", "Bearer " + this.config.access_token).get();
+                        .header("Authorization", "Bearer ").get();
             }
             return response.readEntity(String.class);
         }

@@ -19,6 +19,8 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
+import org.openhab.binding.chamberlainmyq.config.ChamberlainMyQDeviceConfig;
+import org.openhab.binding.chamberlainmyq.handler.ChamberlainMyQGatewayHandler.RequestCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,11 +34,11 @@ import com.google.gson.JsonParser;
  * 
  * @author Scott Hanson - Initial contribution
  */
-public class ChamberlainMyQHandler extends BaseThingHandler {
+public abstract class ChamberlainMyQHandler extends BaseThingHandler {
     /**
      * Base configuration of this device.
      */
-    protected MyQDeviceConfig deviceConfig;
+    protected ChamberlainMyQDeviceConfig deviceConfig;
 
     private Logger logger = LoggerFactory.getLogger(ChamberlainMyQHandler.class);
     /**
@@ -46,12 +48,12 @@ public class ChamberlainMyQHandler extends BaseThingHandler {
      */
     public ChamberlainMyQHandler(Thing thing) {
         super(thing);
-        String config = (String) getThing().getConfiguration().get(WINK_DEVICE_CONFIG);
-        logger.trace("Initializing a thing with the following config: {}", config);
-        String id = (String) getThing().getConfiguration().get(WINK_DEVICE_ID);
+        /*String config = (String) getThing().getConfiguration().get(WINK_DEVICE_CONFIG);
+        logger.trace("Initializing a thing with the following config: {}", config);*/
+        String id = (String) getThing().getConfiguration().get(MYQ_ID);
         logger.trace("Thing ID: {}", id);
-        this.deviceConfig = new WinkDeviceConfig(id);
-        parseConfig(config);
+        this.deviceConfig = new ChamberlainMyQDeviceConfig(id);
+        /*parseConfig(config);*/
         logger.info("Initializing a MyQ device: \n{}", deviceConfig.asString());
     }
 
@@ -178,7 +180,7 @@ public class ChamberlainMyQHandler extends BaseThingHandler {
     public void sendCommand(String payLoad) {
         logger.trace("Sending a command with the following payload: {}\nto device: \n", payLoad, deviceConfig.asString());
         try {
-            getHubHandler().sendRequestToServer(getDeviceRequestPath() + "/desired_state",
+            getGatewayHandler().sendRequestToServer(getDeviceRequestPath() + "/desired_state",
                     new SendCommandCallback(this), payLoad);
         } catch (IOException e) {
             logger.error("Error while querying the hub for {}", getDeviceRequestPath(), e);

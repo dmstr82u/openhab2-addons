@@ -8,7 +8,7 @@
  */
 package org.openhab.binding.chamberlainmyq.handler;
 
-import static org.openhab.binding.chamberlainmyq.ChamberlainMyQBindingConstants.CHANNEL_LIGHTLEVEL;
+import static org.openhab.binding.chamberlainmyq.ChamberlainMyQBindingConstants.*;
 
 import java.text.DecimalFormat;
 
@@ -51,14 +51,14 @@ public class ChamberlainMyQLightHandler extends ChamberlainMyQHandler {
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
-        if (channelUID.getId().equals(CHANNEL_LIGHTLEVEL)) {
+        if (channelUID.getId().equals(CHANNEL_LIGHT_STATE)) {
             ReadDeviceState();
         }
     }
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        if (channelUID.getId().equals(CHANNEL_SWITCHSTATE)) {
+        if (channelUID.getId().equals(CHANNEL_LIGHT_STATE)) {
             if (command.equals(OnOffType.ON)) {
                 setLightState(true);
             } else if (command.equals(OnOffType.OFF)) {
@@ -79,33 +79,25 @@ public class ChamberlainMyQLightHandler extends ChamberlainMyQHandler {
     }
 
     private void updateState(JsonObject jsonDataBlob) {
-        int brightnessLastReading = -1;
+        boolean poweredLastReading = false;
         JsonElement lastReadingBlob = jsonDataBlob.get("last_reading");
         if (lastReadingBlob != null) {
-            JsonElement brightnessBlob = lastReadingBlob.getAsJsonObject().get("brightness");
-            if (brightnessBlob != null) {
-                brightnessLastReading = Math.round(brightnessBlob.getAsFloat() * 100);
-            }
             JsonElement poweredBlob = lastReadingBlob.getAsJsonObject().get("powered");
-            if (poweredBlob != null && poweredBlob.getAsBoolean() == false) {
-                brightnessLastReading = 0;
+            if (poweredBlob != null && poweredBlob.getAsBoolean() == true) {
+                poweredLastReading = true;
             }
         }
-        int brightnessDesiredState = -1;
+        boolean poweredDesiredState = false;
         JsonElement desiredStateBlob = jsonDataBlob.get("desired_state");
         if (desiredStateBlob != null) {
-            JsonElement brightnessBlob = desiredStateBlob.getAsJsonObject().get("brightness");
-            if (brightnessBlob != null) {
-                brightnessDesiredState = Math.round(brightnessBlob.getAsFloat() * 100);
-            }
             JsonElement poweredBlob = desiredStateBlob.getAsJsonObject().get("powered");
-            if (poweredBlob != null && poweredBlob.getAsBoolean() == false) {
-                brightnessDesiredState = 0;
+            if (poweredBlob != null && poweredBlob.getAsBoolean() == true) {
+                poweredDesiredState = true;
             }
         }
         // Don't update the state during a transition.
-        if (brightnessDesiredState == brightnessLastReading || brightnessDesiredState == -1) {
-            updateState(CHANNEL_LIGHTLEVEL, new PercentType(brightnessLastReading));
+        if (poweredDesiredState == poweredLastReading) {
+            updateState(CHANNEL_LIGHT_STATE, (poweredLastReading ? OnOffType.ON : OnOffType.OFF));
         }
     }
 

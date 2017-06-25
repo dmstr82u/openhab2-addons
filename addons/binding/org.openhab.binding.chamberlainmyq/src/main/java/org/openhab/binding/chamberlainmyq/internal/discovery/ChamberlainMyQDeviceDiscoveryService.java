@@ -32,7 +32,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class ChamberlainMyQDeviceDiscoveryService extends AbstractDiscoveryService {
-    private final Logger logger = LoggerFactory.getLogger(WinkDeviceDiscoveryService.class);
+    private final Logger logger = LoggerFactory.getLogger(ChamberlainMyQDeviceDiscoveryService.class);
     private ChamberlainMyQGatewayHandler hubHandler;
 
     public ChamberlainMyQDiscoveryService(WinkHub2Handler hubHandler) throws IllegalArgumentException {
@@ -93,12 +93,13 @@ public class ChamberlainMyQDeviceDiscoveryService extends AbstractDiscoveryServi
             if (!element.isJsonObject()) {
                 continue;
             }
-            if (element.getAsJsonObject().get("light_bulb_id") != null) {
-                addWinkDevice(THING_TYPE_LIGHT_BULB, element.getAsJsonObject(), "light_bulb_id");
-            } else if (element.getAsJsonObject().get("remote_id") != null) {
-                addWinkDevice(THING_TYPE_REMOTE, element.getAsJsonObject(), "remote_id");
-            } else if (element.getAsJsonObject().get("binary_switch_id") != null) {
-                addWinkDevice(THING_TYPE_BINARY_SWITCH, element.getAsJsonObject(), "binary_switch_id");
+            if (element.getAsJsonObject().get("MyQDeviceTypeId") != null) {
+                int deviceTypeId = element.getAsJsonObject().get("MyQDeviceTypeId").asInt();
+                if (deviceTypeId == 2 || deviceTypeId == 5 || deviceTypeId == 7 || deviceTypeId == 17) {
+                    addWinkDevice(THING_TYPE_DOOR_OPENER, element.getAsJsonObject(), "MyQDeviceId");
+                } else if (deviceTypeId == 3) {
+                    addWinkDevice(THING_TYPE_LIGHT, element.getAsJsonObject(), "MyQDeviceId");
+                }
             }
         }
     }
