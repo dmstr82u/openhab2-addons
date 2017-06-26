@@ -15,8 +15,11 @@ package org.openhab.binding.chamberlainmyq.config;
  *
  */
 public class ChamberlainMyQGatewayConfig {
-    public String name;
+    //public String name;
     public String username;
     public String password;
+    public int timeout;
+    public int pollPeriod;
+    public int quickPollPeriod;
 }
 
