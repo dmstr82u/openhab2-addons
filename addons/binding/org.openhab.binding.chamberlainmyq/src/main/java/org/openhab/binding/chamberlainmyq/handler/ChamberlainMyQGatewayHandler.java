@@ -13,6 +13,7 @@ import static org.openhab.binding.chamberlainmyq.ChamberlainMyQBindingConstants.
 import org.openhab.binding.chamberlainmyq.internal.ChamberlainMyQResponseCode;
 import org.openhab.binding.chamberlainmyq.internal.InvalidDataException;
 import org.openhab.binding.chamberlainmyq.internal.InvalidLoginException;
+import org.openhab.binding.chamberlainmyq.internal.HttpUtil;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +45,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonElement;
 
-import org.eclipse.smarthome.io.net.http.HttpUtil;
+//import org.eclipse.smarthome.io.net.http.HttpUtil;
 
 /**
  * TODO: The {@link ChamberlainMyQGatewayHandler} is responsible for handling commands, which are
@@ -57,18 +58,23 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
     private Logger logger = LoggerFactory.getLogger(ChamberlainMyQGatewayHandler.class);
     
     private String securityToken;
-    private Properties header;
+    //private Properties header;
     
     public ChamberlainMyQGatewayHandler(Bridge bridge) {
         super(bridge);
         
-        header = new Properties();
+        /*header = new Properties();
         header.put("Accept", "application/json");
         header.put("User-Agent", USERAGENT);
+        logger.debug("User-Agent: {}", USERAGENT);
         header.put("BrandId", BRANDID);
+        logger.debug("BrandId: {}", BRANDID);
         header.put("ApiVersion", APIVERSION);
+        logger.debug("ApiVersion: {}", APIVERSION);
         header.put("Culture", CULTURE);
+        logger.debug("Culture: {}", CULTURE);
         header.put("MyQApplicationId", APP_ID);
+        logger.debug("MyQApplicationId: {}", APP_ID);*/
     }
 
     @Override
@@ -136,7 +142,7 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
     }
     
     private boolean login() {
-        logger.trace("attempting to login");
+        logger.debug("attempting to login");
         
         String url = String.format("%s/api/v4/User/Validate", WEBSITE);
 
@@ -161,7 +167,7 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
      *
      */
     public JsonObject getMyqData() throws InvalidLoginException, IOException {
-        logger.trace("Retrieving door data");
+        logger.debug("Retrieving door data");
         String url = String.format("%s/api/v4/userdevicedetails/get?appId=%s&SecurityToken=%s", WEBSITE, enc(APP_ID),
                 enc(getSecurityToken()));
 
@@ -178,12 +184,18 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
     }
 
     protected class Request implements Runnable {
-        //private WebTarget target;
+        private String target;
         private RequestCallback callback;
         private String payLoad;
 
-        public Request(String targetPath, RequestCallback callback, String payLoad) {
+        public Request( RequestCallback callback) {
             //this.target = myqTarget.path(targetPath);
+            this.callback = callback;
+            //this.payLoad = payLoad;
+        }
+        
+        public Request(String target, RequestCallback callback, String payLoad) {
+            this.target = target;
             this.callback = callback;
             this.payLoad = payLoad;
         }
@@ -199,15 +211,15 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
         public void run() {
             try {
                 JsonObject resultJson = getMyqData();
-                //String result = invokeAndParse(this.target, this.payLoad);
-                //logger.trace("Gateway replied with: {}", result);
+                //String result = invokeAndParse(this.payLoad);
+                //logger.debug("Gateway replied with: {}", result);
                 //JsonParser parser = new JsonParser();
                 //JsonObject resultJson = parser.parse(result).getAsJsonObject();
 
-                String errors = checkForFailure(resultJson);
-                if (errors != null) {
+                //String errors = checkForFailure(resultJson);
+                //if (errors != null) {
 
-                }
+                //}
                 callback.parseRequestResult(resultJson);
             } catch (Exception e) {
                 logger.error("An exception occurred while executing a request to the Gateway: '{}'", e.getMessage());
@@ -215,31 +227,13 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
         }
     }
 
-    protected String invokeAndParse(WebTarget target, String payLoad) {
-        if (this.config != null) {
-            Response response;
-
-            logger.trace("Requesting the hub for: {}", target.toString());
-            if (payLoad != null) {
-                logger.trace("Request payload: {}", payLoad.toString());
-                response = target.request(MediaType.APPLICATION_JSON_TYPE)
-                        .header("Authorization", "Bearer " ).put(Entity.json(payLoad));
-            } else {
-                response = target.request(MediaType.APPLICATION_JSON_TYPE)
-                        .header("Authorization", "Bearer ").get();
-            }
-            return response.readEntity(String.class);
-        }
-        return null;
+    public void sendRequestToServer( RequestCallback callback) throws IOException {
+        sendRequestToServer(callback);
     }
 
-    public void sendRequestToServer(String deviceRequestPath, RequestCallback callback) throws IOException {
-        sendRequestToServer(deviceRequestPath, callback, null);
-    }
-
-    public void sendRequestToServer(String deviceRequestPath, RequestCallback callback, String payLoad)
+    public void sendRequestToServer( String path, RequestCallback callback, String payLoad)
             throws IOException {
-        Request request = new Request(deviceRequestPath, callback, payLoad);
+        Request request = new Request( callback);
         request.run();
     }
     
@@ -273,14 +267,33 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
      * @throws InvalidLoginException
      */
     private synchronized JsonObject request(String method, String url, String payload, String payloadType, boolean retry) {
+           
+        Properties header;
+        header = new Properties();
+        header.put("Accept", "application/json");
+        header.put("Connection", "keep-alive");
+        //header.put("Content-Type", "application/json");
+        //header.put("User-Agent", USERAGENT);
+        //logger.debug("User-Agent: {}", USERAGENT);
+        header.put("BrandId", BRANDID);
+        logger.debug("BrandId: {}", BRANDID);
+        header.put("ApiVersion", APIVERSION);
+        logger.debug("ApiVersion: {}", APIVERSION);
+        header.put("Culture", CULTURE);
+        logger.debug("Culture: {}", CULTURE);
+        header.put("MyQApplicationId", APP_ID);
+        logger.debug("MyQApplicationId: {}", APP_ID);
+        logger.debug("Requesting method {}", method);
+        logger.debug("Requesting URL {}", url);
+        logger.debug("Requesting payload {}", payload);
+        logger.debug("Requesting payloadType {}", payloadType);
 
-        logger.trace("Requesting URL {}", url);
         String dataString;
         try {
               dataString = HttpUtil.executeUrl(method, url, header, payload == null ? null : IOUtils.toInputStream(payload),
                 payloadType, (this.config.timeout*1000));
 
-               logger.trace("Received MyQ JSON: {}", dataString);
+               logger.debug("Received MyQ JSON: {}", dataString);
 
                if (dataString == null) {
                  logger.error("Null response from MyQ server");
@@ -295,7 +308,7 @@ public class ChamberlainMyQGatewayHandler extends BaseBridgeHandler {
             JsonObject rootNode = parser.parse(dataString).getAsJsonObject();
             
             int returnCode = Integer.parseInt(rootNode.get("ReturnCode").getAsString());
-            logger.trace("myq ReturnCode: {}", returnCode);
+            logger.debug("myq ReturnCode: {}", returnCode);
 
             ChamberlainMyQResponseCode rc = ChamberlainMyQResponseCode.fromCode(returnCode);
 

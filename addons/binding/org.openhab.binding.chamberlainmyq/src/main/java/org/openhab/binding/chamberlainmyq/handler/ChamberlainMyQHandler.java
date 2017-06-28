@@ -148,7 +148,7 @@ public abstract class ChamberlainMyQHandler extends BaseThingHandler {
     protected void ReadDeviceState() {
         logger.trace("Querying the device state for: \n{}", deviceConfig.asString());
         try {
-            getGatewayHandler().sendRequestToServer(getDeviceRequestPath(), new ReadDeviceStateCallback(this));
+            getGatewayHandler().sendRequestToServer( new ReadDeviceStateCallback(this));
         } catch (IOException e) {
             logger.error("Error while querying the hub for {}", getDeviceRequestPath(), e);
         }
